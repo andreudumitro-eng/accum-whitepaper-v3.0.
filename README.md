@@ -1,343 +1,260 @@
-# ACCUM: A Fairer Proof-of-Work Model
-**Version 3.0 | February 2026**
+ACCUM v3.2 — Fair Proof‑of‑Contribution Blockchain Protocol
+Whitepaper & Technical Specification
+Author: Andrii Dumitro
+Version: 3.2 (node-ready)
+Date: March 2026
+
+1. Introduction
+ACCUM is a next‑generation blockchain protocol built on a novel consensus mechanism called Fair Proof‑of‑Contribution (F‑PoC). The protocol is designed to address the structural weaknesses of classical Proof‑of‑Work (PoW), while preserving its strongest properties: decentralization, permissionlessness, and objective security.
+
+Traditional PoW systems suffer from:
+
+• ASIC dominance
+• mining pool centralization
+• unpredictable, lottery‑style rewards
+• lack of miner loyalty
+• economic unfairness
+• high entry barriers
+
+ACCUM solves these issues by redefining how mining rewards are distributed. Instead of rewarding only the miner who finds a block, ACCUM distributes rewards across three independent axes of contribution:
+
+Shares — computational work
+
+Loyalty — long‑term participation
+
+Bond — economic identity and stake
+
+This creates a mining environment where:
+
+• CPU miners remain competitive
+• rewards are proportional and predictable
+• long‑term contributors earn more
+• Sybil attacks become economically unviable
+• mining pools lose structural advantage
+• the network remains decentralized by design
+
+ACCUM is built for fairness, sustainability, and long‑term stability.
+
+2. Monetary Model
+• Base unit: ACM (Accum)
+• Minimal unit: Lyator (LYT)
+• Exchange rate: 1 ACM = 10,000,000 LYT
+• All protocol values (balances, rewards, fees, bond) — uint64 in LYT
+• Maximum supply: 150,000,000 ACM
+• Block reward: 500,000 LYT (0.05 ACM)
+• Epoch reward: 720,000,000 LYT (72 ACM)
+• Block time: 60 seconds
+• Epoch length: 1440 blocks (86400 seconds)
+
+3. Motivation and Problems of Classical PoW
+Classical PoW (Bitcoin‑style) has several structural flaws:
+
+3.1 ASIC dominance
+Specialized hardware outcompetes CPUs and GPUs, centralizing mining.
+
+3.2 Pool centralization
+Most miners join pools, giving a few entities control over block production.
+
+3.3 Lottery‑style rewards
+A miner may work for months and receive nothing.
+
+3.4 No loyalty
+Miners can switch chains instantly, destabilizing smaller networks.
+
+3.5 Economies of scale
+Large farms gain disproportionate advantage.
+
+ACCUM solves these issues through epoch‑based mining and PoCI.
+
+4. Cryptographic Parameters
+• Proof-of-work function: Argon2id
+• Argon2id parameters:
+• memory: 256 MiB (268,435,456 bytes)
+• iterations: 2
+• parallelism: 4
+• version: 0x13
+• type: Argon2id
+
+5. Block Header Structure (120 bytes, little-endian)
+Field	Type	Size (bytes)	Description
+version	uint32	4	Block version
+prev_hash	[32]byte	32	Previous block hash
+merkle_root	[32]byte	32	Merkle root of transactions
+timestamp	uint64	8	Unix timestamp
+difficulty	[32]byte	32	Compact target
+nonce	uint64	8	Proof-of-Work nonce
+epoch_index	uint32	4	Current epoch number
+Total: 120 bytes
+
+6. Valid Block
+text
+hash = Argon2id(complete header, parameters above)
+condition: hash < target_block (target_block derived from difficulty)
+7. Valid Share
+text
+hash = Argon2id(complete header, parameters above)
+condition: hash < target_share (target_share < target_block, defined by protocol)
+8. Share Packet Format (P2P)
+Field	Type	Size (bytes)	Description
+miner_id	[20]byte	20	RIPEMD160(SHA256(compressed secp256k1 pubkey))
+header	[120]byte	120	Complete block header
+nonce	uint64	8	Nonce producing valid share
+hash	[32]byte	32	Computed Argon2id hash
+Total: 180 bytes
+
+9. Miner Identity
+• miner_id = RIPEMD160(SHA256(compressed secp256k1 public key))
+• All PoCI accruals are strictly tied to miner_id
+
+10. Bond
+• Minimum bond for PoCI inclusion: 10,000,000 LYT (1 ACM)
+• Default lock-up period: 20,160 blocks (≈14 days at 60 sec/block)
+• Slashing (100% bond burn):
+• equivocation (two different signatures for same block/epoch)
+• publishing invalid share with >50% share in epoch
+• proven 51% attack (to be implemented in future)
+
+11. Loyalty
+• Initial value: 0
+• Participation in epoch (≥ 1 valid share): loyalty += 1
+• Missed epoch: loyalty = loyalty // 2 (integer division)
+
+12. PoCI (Proof-of-Contribution Index)
+text
+PoCI_i = 0.6 × norm_shares_i + 0.2 × norm_loyalty_i + 0.2 × norm_bond_i
+Normalization:
+
+text
+norm_X_i = X_i / max_X
+where max_X is the maximum value among all miners in the epoch.
+
+Shares normalization (chosen by protocol constant):
+
+sqrt(shares_i) / max_sqrt_shares
+
+or log2(1 + shares_i) / max_log2_shares
+
+13. Reward Distribution
+text
+reward_i (in LYT) = (PoCI_i / ΣPoCI) × 720,000,000
+Payment occurs in the coinbase transaction of the first block of the next epoch (special output to miner_id address).
+
+14. Difficulty Adjustment
+• Interval: every 1440 blocks
+• Formula: new_target = old_target × (actual_time / 86400)
+• Constraint: change no more than ±25% per adjustment
+
+15. Transactions (Minimal Set)
+Transaction Structure
+Field	Type	Description
+version	uint32	Transaction version (1)
+inputs	[]TxIn	List of inputs
+outputs	[]TxOut	List of outputs
+locktime	uint32	Block height or timestamp lock
+TxIn
+Field	Type	Description
+prev_txid	[32]byte	Previous transaction hash
+prev_index	uint32	Output index
+scriptSig	VarBytes	Unlocking script
+sequence	uint32	For relative locktime
+TxOut
+Field	Type	Description
+value	uint64	Amount in LYT
+scriptPubKey	VarBytes	Locking script
+Supported Scripts
+• P2PKH (OP_DUP OP_HASH160 <20> OP_EQUALVERIFY OP_CHECKSIG)
+• P2PK
+• 1-of-n multisig
+• OP_CHECKLOCKTIMEVERIFY
+• OP_CHECKSEQUENCEVERIFY
+
+Validation Rules
+• ∑ inputs ≥ ∑ outputs + fee
+• fee ≥ 50 LYT
+• dust limit: 100 LYT per output
+• ECDSA secp256k1, sighash ALL
+• no double-spend within block
+
+16. Genesis
+• Output: 500,000,000 LYT
+• scriptPubKey: 76a91462e907b15cbf27d5425399ebf6f0fb50ebb88f18ac
+
+17. P2P Messages (Minimum Required)
+Message	Description
+version	Handshake, protocol version
+verack	Acknowledgment of version
+inv	Inventory (block, tx, share)
+getdata	Request data by inv
+block	Block transmission
+tx	Transaction transmission
+share	Share packet transmission
+ping / pong	Connection keep-alive
+epoch_commit	Merkle root of all shares in epoch
+18. Epoch‑Based Mining
+Mining in ACCUM is structured into epochs of 1440 blocks.
+
+During an epoch:
+
+• miners submit shares
+• loyalty is accumulated
+• bond weight is applied
+• PoCI is calculated at epoch end
+• rewards are distributed in the first block of the next epoch
+
+This eliminates the "lottery effect" of classical PoW and ensures predictable, proportional rewards.
+
+19. Lyator (LYT)
+Lyator is the minimal unit of ACCUM.
+
+All protocol‑level values are stored in LYT:
+
+• balances
+• fees
+• block rewards
+• epoch rewards
+• bond amounts
+
+This ensures precision and avoids floating‑point errors.
+
+20. Security Model
+ACCUM provides:
+
+• ASIC resistance (Argon2id, 256 MB memory)
+• anti‑pool decentralization (epoch-based rewards)
+• Sybil resistance via Bond (minimum 1 ACM)
+• anti‑burst mining via Loyalty (decay on miss)
+• predictable inflation (0.0175% annually)
+• stable long‑term economics (150M supply cap)
+
+21. Implementation Notes
+All amounts stored as uint64 LYT.
+
+Constants (for implementation)
+text
+LYATORS_PER_ACM      = 10,000,000
+BLOCK_REWARD_LYT     = 500,000
+EPOCH_BLOCKS         = 1,440
+EPOCH_REWARD_LYT     = 720,000,000
+MINIMUM_FEE_LYT      = 50
+DUST_LIMIT_LYT       = 100
+MINIMUM_BOND_LYT     = 10,000,000
+BOND_LOCKUP_BLOCKS   = 20,160
+ARGON2_MEMORY        = 268,435,456  // 256 MiB
+ARGON2_ITERATIONS    = 2
+ARGON2_PARALLELISM   = 4
+22. Conclusion
+ACCUM v3.2 defines a complete, fair, CPU‑friendly blockchain protocol with:
+
+• Lyator monetary unit
+• Argon2id PoW
+• Epoch‑based mining
+• PoCI reward model (0.6 shares, 0.2 loyalty, 0.2 bond)
+• Bond identity and slashing conditions
+• Loyalty participation with decay
+• Low inflation (0.0175% annually)
+
+This document describes the conceptual and economic foundations of the protocol alongside the complete technical specifications required for node implementation.
+
+Author: Andrii Dumitro
+March 2026
 
-**Author:** Andrii Dumitro  
-**Contact:** andreudumitro@gmail.com  
-**Token:** $ACM
-
----
-
-## ABSTRACT
-
-ACCUM is a layer-1 blockchain protocol implementing **Fair Proof-of-Work (Fair PoW)**. Unlike traditional PoW systems where a single miner receives the entire block reward, ACCUM distributes rewards among **all participants** proportionally to their contribution and continuous participation time.
-
-The protocol's key innovations:
-
-- **Accumulative Mining (ACM)** — every miner receives a reward in every block
-- **Concave reward function** — logarithmic dependence on participation time
-- **Proof-of-Contribution-and-Identity (PoCI)** — 6-component reputation system
-- **Argon2 PoW** — ASIC-resistant algorithm suitable for any hardware
-- **Exponential emission** — 150M maximum supply with λ=0.12 decay
-
----
-
-## 1. THE PROBLEM: FAILURE OF LINEAR PROOF-OF-WORK
-
-Since 2009, Proof-of-Work has been the dominant consensus mechanism. However, the canonical Bitcoin implementation has fundamental flaws:
-
-| Problem | Description | Consequences |
-|---------|-------------|--------------|
-| **Economic Exclusion** | Small miners face prohibitive variance | Forced consolidation |
-| **Mining Oligopoly** | Economies of scale dominate | Power concentration |
-| **Profitable 51% Attacks** | Winner-takes-all model | Security vulnerability |
-| **Sybil Vulnerability** | 1000 fake nodes cost ~$50 | Reputation manipulation |
-| **ASIC Dominance** | Specialized hardware | Loss of decentralization |
-
-**Conclusion:** Traditional PoW is not decentralized consensus but a stochastic lottery that mathematically favors centralization.
-
----
-
-## 2. THE ACCUM SOLUTION: ACCUMULATIVE MINING
-
-ACCUM introduces **Accumulative Mining (ACM)** — a PoW model where:
-
-- **Every miner receives a reward** in every block
-- **Reward grows logarithmically** with continuous participation
-- **Hashrate yields diminishing returns** — doubling hardware does not double rewards
-- **Time becomes the primary mining power source**
-- **Any hardware becomes viable** for mining
-- **Sybil attacks become economically irrational**
-
----
-
-## 3. FORMAL DEFINITION
-
-### 3.1 Reward Function
-
-A miner's reward is determined by:
-R(t) = k · log₂(1 + t)
-
-Where:
-- **t** — continuous participation time
-- **k** — reward coefficient (protocol parameter)
-
-This ensures:
-- Early participation is rewarded
-- Long-term participation provides stable income
-- No exponential advantage from hardware upgrades
-
-### 3.2 Diminishing Returns
-R′(t) = k / (1 + t)
-
-This guarantees that doubling hashrate does not double rewards.
-
-### 3.3 Miner Weight
-
-For reward distribution, each miner's weight is calculated as:
-W = log₂(1 + age) × √hashrate × PoCI_score
-
-Where:
-- **age** — accumulated participation time (in days)
-- **hashrate** — normalized computational power
-- **PoCI_score** — reputation score (0.1 to 1.0)
-
-### 3.4 Block Reward Distribution
-
-In each block, the reward is distributed among **all active miners**:
-total_weight = Σ(W_i)
-
-for each miner:
-reward = block_reward × (W_i / total_weight)
-
-Thus:
-- **No losers** — everyone gets a share
-- **Long-term participants** have advantage
-- **Coalitions are unstable** — honest mining is more profitable
-
----
-
-## 4. PROOF-OF-CONTRIBUTION-AND-IDENTITY (PoCI)
-
-PoCI is a reputation system that protects against Sybil attacks and encourages useful behavior.
-
-### 4.1 PoCI Components
-
-| Component | Weight | Description |
-|-----------|--------|-------------|
-| Hashrate | 40% | Normalized computational power |
-| Uptime | 20% | Number of blocks participated |
-| Transactions | 15% | Number of verified transactions |
-| Bandwidth | 10% | Contribution to data propagation |
-| Age | 10% | Time since first appearance |
-| Honesty | 5% | Absence of protocol violations |
-
-### 4.2 PoCI Score Calculation
-hr_score = min(1.0, hashrate / 1000)
-uptime_score = min(1.0, uptime_blocks / 10000)
-tx_score = min(1.0, transactions_verified / 1000)
-bw_score = bandwidth_score
-age_score = min(1.0, (current_time - first_seen) / (30 days))
-honest_score = 1.0 - (violations / total_blocks)
-
-PoCI = 0.4·hr_score + 0.2·uptime_score + 0.15·tx_score +
-0.1·bw_score + 0.1·age_score + 0.05·honest_score
-
-The PoCI score is used as a **multiplier** in the miner's weight calculation.
-
----
-
-## 5. CONSENSUS AND BLOCK STRUCTURE
-
-### 5.1 Hash Function: Argon2
-
-ACCUM uses Argon2id — a modern, ASIC-resistant hash function:
-hash = Argon2id(
-data = block_header,
-salt = "accum_salt",
-time_cost = 2,
-memory_cost = 8 MB,
-parallelism = 2
-)
-
-Parameters are chosen to make mining efficient on any hardware.
-
-### 5.2 Block Structure
-Block {
-index: uint64
-previous_hash: bytes32
-timestamp: uint64
-miner_pubkey: bytes20
-transactions: []Transaction
-nonce: uint64
-hash: bytes32
-reward_distribution: map[address]float
-}
-
----
-
-## 6. EMISSION AND TOKENOMICS
-
-### 6.1 Emission Parameters
-
-- **Maximum Supply:** 150,000,000 ACM
-- **Initial Block Reward:** 50 ACM
-- **Model:** Exponential decay
-- **Decay Rate (λ):** 0.12
-- **Time to 90% Supply:** ~20 years
-
-### 6.2 Emission Formula
-M(t) = 150,000,000 × (1 - e^(-0.12 × t))
-
-Where **t** is time in years since genesis.
-
-### 6.3 Block Reward Over Time
-R(height) = 50 × e^(-0.12 × height / 525600)
-
-Where 525,600 blocks = 1 year (at 1 block per minute).
-
-### 6.4 Initial Distribution
-
-| Allocation | Percentage | Amount | Vesting |
-|------------|------------|--------|---------|
-| Mining Rewards | 80% | 120,000,000 | Emission over ~100 years |
-| Team | 10% | 15,000,000 | 4 years linear |
-| Treasury | 5% | 7,500,000 | 2 year lock |
-| Community | 5% | 7,500,000 | Airdrop, grants |
-
-### 6.5 Why 150 Million?
-
-The choice of 150 million is both symbolic and practical:
-- **7× Bitcoin's supply** (21M × 7 = 147M → rounded to 150M)
-- Symbolic connection to 7 billion people
-- Ample supply for global adoption without excessive inflation
-
----
-
-## 7. SECURITY ANALYSIS
-
-### 7.1 Sybil Attack Resistance
-
-PoCI makes Sybil attacks economically irrational:
-- New miners start with minimal reputation
-- Building reputation requires **time and contribution**
-- Creating 1000 fake nodes provides negligible advantage
-
-| Strategy | Total Power | PoCI | Effective Power |
-|----------|-------------|------|-----------------|
-| 1 honest node | 100 | 1.0 | 100 |
-| 10 Sybil nodes | 100 | 0.3 | 30 |
-| 100 Sybil nodes | 100 | 0.1 | 10 |
-
-### 7.2 51% Attack Disincentive
-
-Due to the concave reward function:
-- Acquiring 51% of hashrate yields **less than 30% of rewards**
-- The cost of such an attack exceeds potential gains
-- Coalitions are inherently unstable
-
-### 7.3 ASIC Resistance
-
-Argon2's memory-hard properties ensure:
-- No significant advantage from specialized hardware
-- CPU and GPU mining remain competitive
-- True decentralization of mining power
-
----
-
-## 8. GAME THEORY AND ECONOMIC INCENTIVES
-
-### 8.1 Coalition Stability Analysis
-
-Simulations with 50+ agents show that forming coalitions is **less profitable** than honest mining:
-
-| Coalition Size | Share of Network | Reward Share | Incentive to Defect |
-|----------------|------------------|--------------|---------------------|
-| 10% | 10% | 12% | Low |
-| 25% | 25% | 22% | Medium |
-| 51% | 51% | 30% | High |
-
-The concave reward curve creates **fundamental instability** in large coalitions.
-
-### 8.2 Comparison: Bitcoin vs ACCUM
-
-| Incentive | Bitcoin (Linear) | ACCUM (Concave) |
-|-----------|------------------|-----------------|
-| Large miner (51%) | Very profitable | Unprofitable (<30%) |
-| Medium miner (10%) | High volatility | Stable income |
-| Newcomer | Chance ≈ 0 | Income from day one |
-| Forming coalition | Profitable | Unstable |
-
----
-
-## 9. IMPLEMENTATION ARCHITECTURE
-
-### 9.1 Component Structure
-accum/
-├── core/
-│ ├── blockchain.rs # Core consensus logic
-│ ├── block.rs # Block structure
-│ ├── transaction.rs # Transactions
-│ ├── miner.rs # Miner state, PoCI
-│ └── shard.rs # Shard management
-├── network/
-│ ├── p2p.rs # Peer-to-peer networking
-│ └── sync.rs # Chain synchronization
-├── storage/
-│ └── database.rs # Sled persistent storage
-└── node/
-├── full_node.rs # Full node
-└── miner_node.rs # Node with mining capability
-
-### 9.2 Database Schema
-
-```sql
-CREATE TABLE blocks (
-    height INTEGER PRIMARY KEY,
-    hash TEXT UNIQUE,
-    previous_hash TEXT,
-    miner TEXT,
-    timestamp REAL,
-    nonce INTEGER,
-    reward REAL
-);
-
-CREATE TABLE miners (
-    address TEXT PRIMARY KEY,
-    age_score REAL,
-    hashrate REAL,
-    first_seen REAL,
-    uptime_blocks INTEGER,
-    transactions_verified INTEGER,
-    bandwidth_score REAL,
-    violations INTEGER
-);
-
-CREATE TABLE balances (
-    address TEXT PRIMARY KEY,
-    balance REAL
-);
-10. ROADMAP
-Phase	Timeline	Status
-Whitepaper v3.0	Q1 2026	✅ Complete
-Rust Prototype	Q1 2026	✅ Working
-Public Testnet	Q2 2026	⏳ Planned
-Security Audit	Q3 2026	⏳
-Mainnet Launch	Q4 2026	⏳
-11. COMPARISON WITH OTHER POW SYSTEMS
-Parameter	Bitcoin	Kaspa	Monero	ACCUM
-Reward Model	Linear lottery	Linear lottery	Linear lottery	Accumulative
-Mining Basis	Hashrate	Hashrate	Hashrate	Time + Hashrate
-Reward per Block	1 winner	1 winner	1 winner	All participants
-Sybil Resistance	No	No	No	PoCI
-51% Attack Disincentive	No	No	No	Yes (concave)
-ASIC Resistance	No	Limited	Partial	Yes (Argon2)
-Max Supply	21M	28.7B	Infinite	150M
-Emission Model	Halving	Halving	Tail	Exponential decay
-12. CONCLUSION
-ACCUM presents a fundamentally new approach to Proof-of-Work, where:
-
-Time, not hashrate, becomes the primary resource
-
-Every participant receives rewards
-
-51% attacks become economically irrational
-
-Any hardware can mine effectively
-
-Sybil attacks are prevented by the PoCI reputation system
-
-The protocol is implemented as a working Rust prototype and is ready for testnet deployment. ACCUM does not compete with existing PoW systems — it offers an alternative path toward truly decentralized, fair, and accessible mining.
-
-REFERENCES
-
-Nakamoto, S. (2008). Bitcoin: A Peer-to-Peer Electronic Cash System
-
-Biryukov, A., Dinu, D., & Khovratovich, D. (2017). Argon2: the memory-hard function for password hashing and other applications
-
-Sompolinsky, Y., & Zohar, A. (2018). Phantom, Ghostdag
-
-Document Version: 3.0
-Date: February 2026
-License: Open source · Fair launch · No premine
-
-"Fair mining for everyone, not just the wealthy few."
