@@ -9,12 +9,17 @@ ACCUM is a next‑generation blockchain protocol built on a novel consensus mech
 
 Traditional PoW systems suffer from:
 
-• ASIC dominance
-• mining pool centralization
-• unpredictable, lottery‑style rewards
-• lack of miner loyalty
-• economic unfairness
-• high entry barriers
+ASIC dominance
+
+mining pool centralization
+
+unpredictable, lottery‑style rewards
+
+lack of miner loyalty
+
+economic unfairness
+
+high entry barriers
 
 ACCUM solves these issues by redefining how mining rewards are distributed. Instead of rewarding only the miner who finds a block, ACCUM distributes rewards across three independent axes of contribution:
 
@@ -26,26 +31,31 @@ Bond — economic identity and stake
 
 This creates a mining environment where:
 
-• CPU miners remain competitive
-• rewards are proportional and predictable
-• long‑term contributors earn more
-• Sybil attacks become economically unviable
-• mining pools lose structural advantage
-• the network remains decentralized by design
+CPU miners remain competitive
+
+rewards are proportional and predictable
+
+long‑term contributors earn more
+
+Sybil attacks become economically unviable
+
+mining pools lose structural advantage
+
+the network remains decentralized by design
 
 ACCUM is built for fairness, sustainability, and long‑term stability.
 
 2. Monetary Model
-• Base unit: ACM (Accum)
-• Minimal unit: Lyator (LYT)
-• Exchange rate: 1 ACM = 10,000,000 LYT
-• All protocol values (balances, rewards, fees, bond) are stored as uint64 in LYT
-• Maximum supply: 150,000,000 ACM
-• Block reward: 500,000 LYT (0.05 ACM)
-• Epoch reward: 720,000,000 LYT (72 ACM)
-• Block time: 60 seconds
-• Epoch length: 1440 blocks (86,400 seconds)
-
+Parameter	Value
+Base unit	ACM (Accum)
+Minimal unit	Lyator (LYT)
+Exchange rate	1 ACM = 10,000,000 LYT
+All protocol values	stored as uint64 in LYT
+Maximum supply	150,000,000 ACM
+Block reward	500,000 LYT (0.05 ACM)
+Epoch reward	720,000,000 LYT (72 ACM)
+Block time	60 seconds
+Epoch length	1440 blocks (86,400 seconds)
 3. Motivation and Problems of Classical PoW
 Classical PoW (Bitcoin‑style) has several structural flaws:
 
@@ -67,13 +77,19 @@ Large farms gain disproportionate advantage through bulk hardware purchases, dis
 ACCUM solves these issues through epoch‑based mining and the Proof-of-Contribution Index (PoCI).
 
 4. Cryptographic Parameters
-• Proof-of-work function: Argon2id
-• Argon2id parameters:
-• memory: 256 MiB (268,435,456 bytes)
-• iterations: 2
-• parallelism: 4
-• version: 0x13
-• type: Argon2id
+Proof-of-work function: Argon2id
+
+Argon2id parameters:
+
+memory: 256 MiB (268,435,456 bytes)
+
+iterations: 2
+
+parallelism: 4
+
+version: 0x13
+
+type: Argon2id
 
 Argon2id is selected for its memory-hard properties, which provide strong ASIC resistance. The 256 MB memory requirement makes it economically unviable to design efficient ASICs, leveling the playing field for commodity CPU hardware.
 
@@ -97,11 +113,16 @@ condition: hash < target_block
 Where target_block is derived from the difficulty field. The block is considered valid if the hash meets the network difficulty target.
 
 Additional validation rules:
-• Timestamp must be greater than the median timestamp of the last 11 blocks and less than network-adjusted time + 2 hours
-• Merkle root must correctly represent all transactions in the block
-• First transaction must be a valid coinbase transaction
-• All transactions must follow validation rules
-• Block height must be consistent with prev_hash
+
+Timestamp must be greater than the median timestamp of the last 11 blocks and less than network-adjusted time + 2 hours
+
+Merkle root must correctly represent all transactions in the block
+
+First transaction must be a valid coinbase transaction
+
+All transactions must follow validation rules
+
+Block height must be consistent with prev_hash
 
 7. Valid Share
 text
@@ -109,7 +130,7 @@ hash = Argon2id(complete header, parameters above)
 condition: hash < target_share
 A "share" is a unit of work submitted by a miner to prove computational contribution during an epoch. The target_share is a protocol-defined target that is significantly easier (higher numerical value) than target_block, allowing miners to submit many shares per epoch.
 
-Shares are not blocks—they do not advance the chain. They serve as proof of work for the PoCI calculation.
+Shares are not blocks — they do not advance the chain. They serve as proof of work for the PoCI calculation.
 
 8. Share Packet Format (P2P)
 Field	Type	Size (bytes)	Description
@@ -122,9 +143,11 @@ Total: 180 bytes
 Shares are broadcast on the P2P network and used by other nodes to verify a miner's contribution during epoch reward calculation.
 
 9. Miner Identity
-• miner_id = RIPEMD160(SHA256(compressed secp256k1 public key))
-• All PoCI accruals and reward distributions are strictly tied to miner_id
-• The same 20-byte format is used for standard P2PKH addresses
+miner_id = RIPEMD160(SHA256(compressed secp256k1 public key))
+
+All PoCI accruals and reward distributions are strictly tied to miner_id
+
+The same 20-byte format is used for standard P2PKH addresses
 
 This provides a consistent identity format across the protocol while maintaining cryptographic security through the underlying public key.
 
@@ -132,9 +155,10 @@ This provides a consistent identity format across the protocol while maintaining
 The Bond is an economic commitment that enhances a miner's PoCI and provides Sybil resistance.
 
 10.1 Parameters
-• Minimum bond for PoCI inclusion: 10,000,000 LYT (1 ACM)
-• Lock-up period: 20,160 blocks (≈14 days)
-• Bond must be locked in a special bond output and cannot be spent during the lock-up period
+Parameter	Value
+Minimum bond for PoCI inclusion	10,000,000 LYT (1 ACM)
+Lock-up period	20,160 blocks (≈14 days)
+Bond must be locked in a special bond output and cannot be spent during the lock-up period.
 
 10.2 Bond Weight in PoCI
 Miners with bond ≥ minimum receive additional weight in the PoCI calculation. Bond amount is normalized against the maximum bond in the epoch.
@@ -142,9 +166,11 @@ Miners with bond ≥ minimum receive additional weight in the PoCI calculation. 
 10.3 Slashing (100% Bond Burn)
 To penalize malicious behavior, the entire bond is burned (destroyed) upon proof of:
 
-• Equivocation: Signing two different messages (blocks or shares) for the same height or epoch
-• Invalid Share Flooding: Publishing known invalid shares while controlling >50% of shares in an epoch
-• Proven 51% Attack: Participation in a successfully proven 51% attack (mechanism to be defined in future upgrade)
+Equivocation: Signing two different messages (blocks or shares) for the same height or epoch
+
+Invalid Share Flooding: Publishing known invalid shares while controlling >50% of shares in an epoch
+
+Proven 51% Attack: Participation in a successfully proven 51% attack (mechanism to be defined in future upgrade)
 
 Slashing provides strong economic disincentives for attacks on the network.
 
@@ -153,10 +179,13 @@ The bond requirement serves as a sybil deterrence mechanism, not a monetary barr
 
 Because the value of 1 ACM is determined solely by market forces and may fluctuate significantly over time, the bond is defined exclusively in LYT — the protocol's native unit. This guarantees that:
 
-• The requirement remains deterministic and consensus-safe
-• No external price oracles are needed
-• The economic weight of the bond scales naturally with the network's market value
-• The barrier to entry for honest miners remains purely protocol-native
+The requirement remains deterministic and consensus-safe
+
+No external price oracles are needed
+
+The economic weight of the bond scales naturally with the network's market value
+
+The barrier to entry for honest miners remains purely protocol-native
 
 10.5 How Bond Scales with Network Value
 Network Phase	Market Cap (example)	1 ACM Value (example)	Bond in USD (illustrative)	Effect
@@ -176,9 +205,11 @@ Always: The bond is denominated in the protocol's native asset, preserving decen
 11. Loyalty
 Loyalty rewards miners for consistent, long-term participation in the network.
 
-• Initial value: 0
-• Participation in an epoch (≥ 1 valid share): loyalty += 1
-• Missed epoch (no valid shares): loyalty = loyalty // 2 (integer division)
+Initial value: 0
+
+Participation in an epoch (≥ 1 valid share): loyalty += 1
+
+Missed epoch (no valid shares): loyalty = loyalty // 2 (integer division)
 
 The loyalty factor increases linearly with continuous participation but decays exponentially (through integer halving) when a miner misses an epoch. This prevents hoarding of loyalty after long absences and ensures that loyalty reflects recent participation.
 
@@ -189,9 +220,12 @@ The PoCI is the mathematical expression of the F-PoC principle, calculated for e
 text
 PoCI_i = 0.6 × norm_shares_i + 0.2 × norm_loyalty_i + 0.2 × norm_bond_i
 The weights are constants defined by the protocol:
-• 0.6 for shares: Computational work is the primary contribution
-• 0.2 for loyalty: Provides network stability and retention
-• 0.2 for bond: Aligns economic incentives and prevents Sybil attacks
+
+0.6 for shares: Computational work is the primary contribution
+
+0.2 for loyalty: Provides network stability and retention
+
+0.2 for bond: Aligns economic incentives and prevents Sybil attacks
 
 12.2 Normalization
 text
@@ -224,22 +258,30 @@ Throughout the epoch, the network tracks shares, loyalty, and bond for each mine
 
 13.2 Finalization
 Upon mining the 1440th block of the epoch, the PoCI for all participants is finalized. The protocol calculates:
-• Normalized values for all components
-• Individual PoCI scores
-• Total PoCI sum
-• Individual rewards
+
+Normalized values for all components
+
+Individual PoCI scores
+
+Total PoCI sum
+
+Individual rewards
 
 13.3 Payout
 The epoch reward is distributed in a special coinbase transaction included in the first block of the next epoch. This transaction contains multiple outputs, each sending the calculated reward_i to the corresponding miner_id address (P2PKH format).
 
 This mechanism ensures that:
-• Rewards are proportional to contribution
-• Distribution is transparent and verifiable
-• No central party controls payout
+
+Rewards are proportional to contribution
+
+Distribution is transparent and verifiable
+
+No central party controls payout
 
 14. Difficulty Adjustment
-• Adjustment interval: every 1440 blocks (each epoch)
-• Target epoch time: 86,400 seconds (24 hours)
+Adjustment interval: every 1440 blocks (each epoch)
+
+Target epoch time: 86,400 seconds (24 hours)
 
 14.1 Formula
 text
@@ -248,8 +290,10 @@ Where actual_time_span is the actual time taken to mine the last 1440 blocks.
 
 14.2 Bounds
 To prevent extreme volatility from time warp attacks or network hiccups, the adjustment is clamped:
-• Maximum increase per epoch: +25% (target becomes easier)
-• Maximum decrease per epoch: -25% (target becomes harder)
+
+Maximum increase per epoch: +25% (target becomes easier)
+
+Maximum decrease per epoch: -25% (target becomes harder)
 
 14.3 Target Representation
 Difficulty is stored as a 32-byte compact target in the block header, following the same format as Bitcoin: a 256-bit number where lower values represent higher difficulty.
@@ -285,40 +329,55 @@ text
 text
 OP_1 <pubkey1> ... <pubkeyn> OP_n OP_CHECKMULTISIG
 Timelocks:
-• OP_CHECKLOCKTIMEVERIFY for absolute timelocks
-• OP_CHECKSEQUENCEVERIFY for relative timelocks
+
+OP_CHECKLOCKTIMEVERIFY for absolute timelocks
+
+OP_CHECKSEQUENCEVERIFY for relative timelocks
 
 15.5 Validation Rules
-• Balance rule: ∑ inputs ≥ ∑ outputs + fee (no inflation)
-• Minimum fee: fee ≥ 50 LYT
-• Dust limit: Minimum output value of 100 LYT (outputs below this are considered non-standard and may be rejected)
-• Signature: ECDSA secp256k1 with SIGHASH_ALL
-• No double-spend: Same input cannot appear twice in the same block
-• Script execution: scriptSig must only push data (no opcodes) for standard transactions
+Balance rule: ∑ inputs ≥ ∑ outputs + fee (no inflation)
+
+Minimum fee: fee ≥ 50 LYT
+
+Dust limit: Minimum output value of 100 LYT (outputs below this are considered non-standard and may be rejected)
+
+Signature: ECDSA secp256k1 with SIGHASH_ALL
+
+No double-spend: Same input cannot appear twice in the same block
+
+Script execution: scriptSig must only push data (no opcodes) for standard transactions
 
 16. Genesis Block
 The genesis block establishes the initial state of the ledger, hard-coded into every node implementation.
 
 16.1 Genesis Output
-• Value: 500,000,000 LYT (50 ACM)
-• scriptPubKey: 76a91462e907b15cbf27d5425399ebf6f0fb50ebb88f18ac
+Value: 500,000,000 LYT (50 ACM)
+
+scriptPubKey: 76a91462e907b15cbf27d5425399ebf6f0fb50ebb88f18ac
 
 This scriptPubKey corresponds to a standard P2PKH output:
 
 text
 OP_DUP OP_HASH160 62e907b15cbf27d5425399ebf6f0fb50ebb88f18 OP_EQUALVERIFY OP_CHECKSIG
 16.2 Genesis Properties
-• The private key for this address is considered destroyed
-• No one can spend these coins
-• This symbolizes the fair launch of the network with no pre-mine
+The private key for this address is considered destroyed
+
+No one can spend these coins
+
+This symbolizes the fair launch of the network with no pre-mine
 
 16.3 Genesis Header
 The genesis block header has:
-• prev_hash = [0; 32] (all zeros)
-• timestamp set to the Unix epoch of the launch
-• difficulty set to the initial network difficulty
-• nonce set to the value that produces a valid genesis hash
-• epoch_index = 1
+
+prev_hash = [0; 32] (all zeros)
+
+timestamp set to the Unix epoch of the launch
+
+difficulty set to the initial network difficulty
+
+nonce set to the value that produces a valid genesis hash
+
+epoch_index = 1
 
 17. P2P Messages (Minimum Required)
 All nodes MUST implement the following protocol messages for interoperability:
@@ -352,47 +411,72 @@ Mining in ACCUM is fundamentally different from classical PoW due to the epoch s
 
 18.1 Epoch Lifecycle
 During an epoch (blocks N to N+1439):
-• Miners continuously perform Proof-of-Work
-• When a miner finds a hash below target_block, they broadcast a block and claim the block reward (0.05 ACM)
-• When a miner finds a hash below target_share, they broadcast a share packet
-• All valid shares are recorded for the current epoch
-• Loyalty counters are active (if miner submits at least one share)
-• Bond weights are applied based on locked amounts
+
+Miners continuously perform Proof-of-Work
+
+When a miner finds a hash below target_block, they broadcast a block and claim the block reward (0.05 ACM)
+
+When a miner finds a hash below target_share, they broadcast a share packet
+
+All valid shares are recorded for the current epoch
+
+Loyalty counters are active (if miner submits at least one share)
+
+Bond weights are applied based on locked amounts
 
 At epoch boundary (after block N+1439):
-• The network stops accepting shares for the concluded epoch
-• PoCI is calculated for all miners who submitted shares
-• Total reward pool = 720,000,000 LYT + all transaction fees from the epoch
+
+The network stops accepting shares for the concluded epoch
+
+PoCI is calculated for all miners who submitted shares
+
+Total reward pool = 720,000,000 LYT + all transaction fees from the epoch
 
 First block of next epoch (block N+1440):
-• Contains special coinbase transaction with multiple outputs
-• Each output sends calculated reward to corresponding miner_id
-• New epoch begins
+
+Contains special coinbase transaction with multiple outputs
+
+Each output sends calculated reward to corresponding miner_id
+
+New epoch begins
 
 18.2 Benefits of Epoch-Based Mining
-• Eliminates lottery effect: Rewards are proportional, not winner-take-all
-• Predictable income: Miners can estimate returns based on their share of network PoCI
-• Pool disincentive: Low variance makes solo mining viable
-• Fairness: Small miners receive their fair share, not zero
+Eliminates lottery effect: Rewards are proportional, not winner-take-all
+
+Predictable income: Miners can estimate returns based on their share of network PoCI
+
+Pool disincentive: Low variance makes solo mining viable
+
+Fairness: Small miners receive their fair share, not zero
 
 19. Lyator (LYT)
 Lyator is the minimal, indivisible unit of the ACCUM protocol.
 
 19.1 Purpose
 All protocol-level values are stored and processed in LYT to:
-• Eliminate floating-point errors
-• Ensure deterministic calculations across all implementations
-• Simplify integer arithmetic
-• Prevent rounding discrepancies in consensus
+
+Eliminate floating-point errors
+
+Ensure deterministic calculations across all implementations
+
+Simplify integer arithmetic
+
+Prevent rounding discrepancies in consensus
 
 19.2 Usage
 LYT is used for:
-• Account balances
-• Transaction fees
-• Block rewards
-• Epoch rewards
-• Bond amounts
-• Dust limits
+
+Account balances
+
+Transaction fees
+
+Block rewards
+
+Epoch rewards
+
+Bond amounts
+
+Dust limits
 
 19.3 Conversion
 text
@@ -403,38 +487,54 @@ User interfaces may display values in ACM for readability, but all consensus cod
 ACCUM provides multiple layers of security through its design.
 
 20.1 ASIC Resistance
-• Argon2id with 256 MB memory requirement
-• Memory-hard function makes ASIC development economically prohibitive
-• CPU mining remains competitive
-• Geographic and demographic decentralization preserved
+Argon2id with 256 MB memory requirement
+
+Memory-hard function makes ASIC development economically prohibitive
+
+CPU mining remains competitive
+
+Geographic and demographic decentralization preserved
 
 20.2 Anti-Pool Decentralization
-• Epoch-based rewards eliminate the variance that forces miners into pools
-• Proportional rewards make solo mining economically viable
-• No advantage to pooling hash power
-• Natural disincentive for pool formation
+Epoch-based rewards eliminate the variance that forces miners into pools
+
+Proportional rewards make solo mining economically viable
+
+No advantage to pooling hash power
+
+Natural disincentive for pool formation
 
 20.3 Sybil Resistance
-• Minimum bond requirement (1 ACM) for full PoCI participation
-• Creating many identities requires locking many coins
-• Economic barrier to Sybil attacks
+Minimum bond requirement (1 ACM) for full PoCI participation
+
+Creating many identities requires locking many coins
+
+Economic barrier to Sybil attacks
 
 20.4 Anti-Burst Mining
-• Loyalty mechanism rewards long-term participation
-• Loyalty decays on missed epochs
-• "Hit-and-run" miners receive lower effective rewards
-• Network stability through committed miners
+Loyalty mechanism rewards long-term participation
+
+Loyalty decays on missed epochs
+
+"Hit-and-run" miners receive lower effective rewards
+
+Network stability through committed miners
 
 20.5 51% Attack Resistance
-• Attacker needs 51% of shares AND proportional loyalty AND bond
-• Multi-dimensional requirement dramatically increases attack cost
-• Bond slashing provides additional disincentive
+Attacker needs 51% of shares AND proportional loyalty AND bond
+
+Multi-dimensional requirement dramatically increases attack cost
+
+Bond slashing provides additional disincentive
 
 20.6 Predictable Economics
-• Fixed maximum supply: 150,000,000 ACM
-• Low inflation: 0.0175% annually
-• Transparent emission schedule
-• No unexpected monetary policy changes
+Fixed maximum supply: 150,000,000 ACM
+
+Low inflation: 0.0175% annually
+
+Transparent emission schedule
+
+No unexpected monetary policy changes
 
 21. Implementation Notes
 21.1 Data Types
@@ -472,9 +572,11 @@ POCI_WEIGHT_SHARES   = 0.6
 POCI_WEIGHT_LOYALTY  = 0.2
 POCI_WEIGHT_BOND     = 0.2
 21.3 Serialization
-• All integers are serialized in little-endian byte order
-• Variable-length data (scripts) use Bitcoin-style VarInt prefix
-• Hashes are serialized as raw bytes
+All integers are serialized in little-endian byte order
+
+Variable-length data (scripts) use Bitcoin-style VarInt prefix
+
+Hashes are serialized as raw bytes
 
 21.4 Error Handling
 Implementations should use checked arithmetic to prevent overflow/underflow. All monetary operations must validate against maximum supply constraints.
@@ -485,43 +587,66 @@ ACCUM v3.2 defines a complete, fair, CPU-friendly blockchain protocol that addre
 22.1 Key Innovations
 Fair Proof-of-Contribution (F-PoC)
 A multi-dimensional reward mechanism that evaluates miners based on:
-• Computational work (shares) — 60% weight
-• Network loyalty — 20% weight
-• Economic commitment (bond) — 20% weight
+
+Computational work (shares) — 60% weight
+
+Network loyalty — 20% weight
+
+Economic commitment (bond) — 20% weight
 
 Epoch-Based Distribution
-• 1440-block epochs (24 hours)
-• Proportional rewards based on PoCI
-• Elimination of lottery-style variance
+
+1440-block epochs (24 hours)
+
+Proportional rewards based on PoCI
+
+Elimination of lottery-style variance
 
 ASIC Resistance
-• Argon2id with 256 MB memory
-• CPU-friendly mining
-• Level playing field for commodity hardware
+
+Argon2id with 256 MB memory
+
+CPU-friendly mining
+
+Level playing field for commodity hardware
 
 Economic Alignment
-• Bond requirements with slashing conditions
-• Loyalty accumulation and decay
-• Low inflation (0.0175% annually)
-• Fixed supply (150,000,000 ACM)
+
+Bond requirements with slashing conditions
+
+Loyalty accumulation and decay
+
+Low inflation (0.0175% annually)
+
+Fixed supply (150,000,000 ACM)
 
 22.2 Technical Completeness
 This document provides everything necessary for a complete, interoperable node implementation:
-• Full monetary model with precise constants
-• Cryptographic parameters and hash function specifications
-• Complete data structures (block header, share packet, transactions)
-• Consensus rules and validation logic
-• P2P protocol message definitions
-• Genesis block specification
+
+Full monetary model with precise constants
+
+Cryptographic parameters and hash function specifications
+
+Complete data structures (block header, share packet, transactions)
+
+Consensus rules and validation logic
+
+P2P protocol message definitions
+
+Genesis block specification
 
 22.3 Vision
 ACCUM establishes a new standard for fairness in decentralized networks. By rewarding not just computational power, but also long-term commitment and economic alignment, the protocol creates a more equitable mining environment where:
 
-• Individual CPU miners can compete effectively
-• Long-term contributors are appropriately rewarded
-• Attacks become economically prohibitive
-• The network remains truly decentralized
-• Value accrues to those who build and maintain the network
+Individual CPU miners can compete effectively
+
+Long-term contributors are appropriately rewarded
+
+Attacks become economically prohibitive
+
+The network remains truly decentralized
+
+Value accrues to those who build and maintain the network
 
 This document serves as both a conceptual whitepaper explaining the philosophy behind ACCUM and a complete technical specification for node developers. The protocol is ready for implementation and launch, with all parameters finalized and no unresolved design questions.
 
