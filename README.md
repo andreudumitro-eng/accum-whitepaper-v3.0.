@@ -133,7 +133,7 @@ The Bond is an economic commitment that enhances a miner's PoCI and provides Syb
 
 10.1 Parameters
 • Minimum bond for PoCI inclusion: 10,000,000 LYT (1 ACM)
-• Default lock-up period: 20,160 blocks (≈14 days at 60 sec/block)
+• Lock-up period: 20,160 blocks (≈14 days)
 • Bond must be locked in a special bond output and cannot be spent during the lock-up period
 
 10.2 Bond Weight in PoCI
@@ -147,6 +147,31 @@ To penalize malicious behavior, the entire bond is burned (destroyed) upon proof
 • Proven 51% Attack: Participation in a successfully proven 51% attack (mechanism to be defined in future upgrade)
 
 Slashing provides strong economic disincentives for attacks on the network.
+
+10.4 Economic Rationale
+The bond requirement serves as a sybil deterrence mechanism, not a monetary barrier measured in fiat. It ensures that each participating miner_id represents a real economic commitment within the protocol's native economy.
+
+Because the value of 1 ACM is determined solely by market forces and may fluctuate significantly over time, the bond is defined exclusively in LYT — the protocol's native unit. This guarantees that:
+
+• The requirement remains deterministic and consensus-safe
+• No external price oracles are needed
+• The economic weight of the bond scales naturally with the network's market value
+• The barrier to entry for honest miners remains purely protocol-native
+
+10.5 How Bond Scales with Network Value
+Network Phase	Market Cap (example)	1 ACM Value (example)	Bond in USD (illustrative)	Effect
+Launch	$5M	$0.033	$0.033	Low barrier — encourages participation
+Growth	$150M	$1.00	$1.00	Meaningful cost for sybil creation
+Maturity	$1.5B	$10.00	$10.00	Significant economic commitment
+Note: USD values are shown for illustration only. The protocol only enforces the bond in LYT.
+
+This design ensures that:
+
+Early phase: Low dollar-cost encourages miner adoption
+
+Mature phase: High dollar-cost naturally deters large-scale sybil attacks
+
+Always: The bond is denominated in the protocol's native asset, preserving decentralization and eliminating oracle dependency
 
 11. Loyalty
 Loyalty rewards miners for consistent, long-term participation in the network.
@@ -500,5 +525,103 @@ ACCUM establishes a new standard for fairness in decentralized networks. By rewa
 
 This document serves as both a conceptual whitepaper explaining the philosophy behind ACCUM and a complete technical specification for node developers. The protocol is ready for implementation and launch, with all parameters finalized and no unresolved design questions.
 
+23. Governance
+23.1 Governance Philosophy
+ACCUM is built on the principle of gradual decentralization. The protocol recognizes that in the early stages of network existence, rapid decision-making is critical for security and stability. Therefore, ACCUM's governance model is evolutionary — it develops alongside the network, transferring control to the community as it grows and matures.
+
+23.2 Phase 1: Foundational Governance (Blocks 0 — 200,000)
+Duration: ~1 year (at 60 sec/block)
+
+In this phase, the protocol founders retain the right to make strategic decisions. This is necessary for:
+
+Rapid response to critical vulnerabilities
+
+Parameter adjustments in response to real network conditions
+
+Preventing attacks in the early stage when the community is still small
+
+Limitations on Founder Power:
+
+All changes must be published as ACCUM Improvement Proposals (AIPs) at least 14 days before activation. Each change must be accompanied by public justification and technical audit.
+
+23.3 Phase 2: Hybrid Governance (Blocks 200,001 — 500,000)
+Duration: ~1.5 years
+
+In this phase, the first elements of decentralized governance are introduced:
+
+Advisory Votes
+
+The community gains the right to non-binding votes on key parameters:
+
+Changes to PoCI weights (0.6/0.2/0.2)
+
+Adjustments to minimum bond
+
+Changes to epoch length
+
+Although the results are not binding, founders commit to publicly explaining any decision that contradicts the community's will.
+
+Validator Council
+
+An advisory body of 7 validators elected by the community is created. The council receives veto power over changes affecting network security, with the ability to delay changes for 30 days.
+
+23.4 Phase 3: Full DAO Decentralization (Block 500,001+)
+After reaching block height 500,001 (~2.5 years after launch), governance fully transitions to the community according to the following model:
+
+Governance Actors
+Role	Composition	Authority
+Validators	Node operators	Technical upgrades, consensus parameters
+Token Holders	All ACM owners	Economic parameters, treasury
+Security Council	9 elected experts (6/9 multisig)	Emergency actions, freeze during attacks
+Voting Mechanism
+Vote Weight:
+
+For economic matters: 1 ACM = 1 vote (quadratic weighting to prevent whale dominance)
+
+For technical matters: validator votes weighted by their share of PoCI
+
+For security matters: Security Council only, with mandatory public report
+
+Procedure:
+
+Proposal published as AIP on forum (minimum 7 days discussion)
+
+Author deposits 1000 ACM (returned if successful, burned if malicious)
+
+Voting lasts 7 days
+
+Approval requires >50% votes with >30% participation
+
+7-day timelock before activation
+
+Voteable Parameters
+Category	Examples	Change Frequency
+PoCI weights	0.6/0.2/0.2	No more than once per year
+Bond	Minimum bond	No more than once per 6 months
+Epoch length	1440 blocks	No more than once per year
+Fee market	Minimum fee	No more than once per 3 months
+Treasury	Fund allocation	Anytime
+23.5 Economic Security of Governance
+To prevent governance attacks:
+
+Preventing Vote Buying:
+
+Quadratic voting: vote cost increases exponentially with number of votes
+
+Minimum token holding period for voting participation: 7 days
+
+Protection Against Malicious Proposals:
+
+Author's proposal deposit burned if attempting destructive changes
+
+Security Council has veto power over proposals threatening network integrity (with mandatory public justification)
+
+23.6 Transparency and Accountability
+All votes, proposals, and decisions are recorded on the blockchain. Historical records of governance decisions are available for audit by any network participant. The Security Council is required to publish quarterly reports on its activities.
+
+23.7 Fork Mechanism
+In case of disagreement with governance decisions, any participant may create a fork of the protocol. ACCUM does not prevent forks and recognizes the community's right to separate, provided basic consensus rules are followed.
+
 Author: Andrii Dumitro
 March 2026
+
