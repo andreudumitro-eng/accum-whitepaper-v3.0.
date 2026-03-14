@@ -1,4 +1,4 @@
-<<<<<<< HEAD
+
 # ACCUM Node Primitives (Rust)
 
 This crate implements the core data structures and basic validation logic for the ACCUM node,
